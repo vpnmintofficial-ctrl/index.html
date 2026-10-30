@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 
-const TOKEN = '9276690902:AAEQ8KE12ZBR7G-7D2yuWXxDBGXMxMu-8UQ';
+const TOKEN = '9276690902:AAHJGUXY6ElHUallH0TsfYZ8hMA6sLMOtNA';
 const ADMIN_ID = '8667961334';
 const SITE_URL = 'https://mint-nti9.onrender.com';
 
