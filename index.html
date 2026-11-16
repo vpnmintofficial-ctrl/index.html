@@ -1,145 +1,608 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Загрузка...</title>
+<title>Вхід/Реєстрація</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    color: #fff;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    cursor: pointer;
-  }
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+  -webkit-tap-highlight-color: transparent; 
+}
 
-  #gate {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
-    z-index: 90;
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-  }
+:root {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --surface-input: #2a2a2a;
+  --accent: #5cc12c;
+  --accent-hover: #4da824;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --border: #333333;
+  --icon-bg: #2a2a2a;
+}
 
-  #gate .icon {
-    font-size: 72px;
-    margin-bottom: 20px;
-    animation: pulse 1.5s infinite;
-  }
+body { 
+  background-color: var(--bg); 
+  color: var(--text); 
+  min-height: 100vh; 
+  display: flex; 
+  flex-direction: column;
+  overflow-x: hidden; 
+}
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.12); opacity: 0.7; }
-  }
+/* Шапка */
+.header {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  position: sticky; 
+  top: 0; 
+  z-index: 10;
+  height: 60px;
+}
+.header .menu, .header .support {
+  width: 24px; 
+  height: 24px; 
+  cursor: pointer;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+}
+.header .title { 
+  font-size: 20px; 
+  font-weight: 500; 
+}
 
-  #gate h1 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
+/* Обертка для прокрутки контента */
+.content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 100px; /* Отступ под нижнее меню */
+}
 
-  #gate p {
-    font-size: 16px;
-    color: #888;
-    max-width: 340px;
-    line-height: 1.4;
-    animation: blink 1.5s infinite;
-  }
+/* Блок авторизации */
+.auth-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.auth-card h3 { 
+  font-size: 15px; 
+  font-weight: 400; 
+  margin-bottom: 12px; 
+  color: #ccc;
+}
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
+/* Ввод телефона */
+.phone-input-group {
+  display: flex;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.country-code {
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+  background: #252525;
+  border: 1px solid var(--border);
+  border-radius: 8px 0 0 8px;
+  padding: 0 12px;
+  font-size: 16px;
+  border-right: none;
+  flex-shrink: 0;
+}
+.flag { 
+  width: 20px; 
+  height: 14px; 
+  background: linear-gradient(to bottom, #0057b7 50%, #ffd700 50%); 
+  border-radius: 2px; 
+}
+.phone-input {
+  flex: 1;
+  width: 100%;
+  background: var(--surface-input);
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  min-width: 0;
+}
+.phone-input::placeholder { 
+  color: var(--text-muted); 
+}
 
-  #video {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    display: none;
-    z-index: 50;
-    background: #000;
-  }
+/* Чекбокс */
+.checkbox-container {
+  display: flex; 
+  align-items: flex-start; 
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 14px; 
+  line-height: 1.4;
+  cursor: pointer;
+}
+.custom-checkbox {
+  width: 24px; 
+  height: 24px;
+  background-color: var(--accent);
+  border-radius: 4px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.custom-checkbox svg { 
+  width: 16px; 
+  height: 16px; 
+  stroke: white; 
+  stroke-width: 3; 
+  fill: none; 
+}
+.checkbox-text { 
+  color: #ccc; 
+}
+.checkbox-text a { 
+  color: var(--accent); 
+  text-decoration: underline; 
+}
 
-  body.playing #video { display: block; }
-  body.playing #gate { display: none !important; }
+/* Кнопка Продовжити */
+.btn-primary {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { 
+  background: var(--accent-hover); 
+}
+
+/* Быстрые действия */
+.quick-actions {
+  display: flex; 
+  justify-content: space-around;
+  margin-bottom: 24px;
+  padding: 0 10px;
+}
+.action-item {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 8px;
+  cursor: pointer;
+}
+.action-icon {
+  width: 64px; 
+  height: 64px;
+  background: var(--icon-bg);
+  border-radius: 50%;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+}
+.action-icon svg { 
+  width: 28px; 
+  height: 28px; 
+  fill: #ccc; 
+}
+.action-label { 
+  font-size: 13px; 
+  color: var(--text); 
+}
+
+/* Промо карта */
+.promo-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px 20px;
+  text-align: center;
+}
+.card-image {
+  width: 140px; 
+  height: 85px;
+  background: linear-gradient(135deg, #5a7ca8, #2b4162);
+  border-radius: 10px;
+  margin: 0 auto 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  position: relative;
+}
+.card-image::after {
+  content: ''; 
+  position: absolute; 
+  top: 12px; 
+  right: 12px;
+  width: 24px; 
+  height: 18px; 
+  background: rgba(255,255,255,0.2); 
+  border-radius: 4px;
+}
+.promo-card h3 { 
+  font-size: 18px; 
+  font-weight: 500; 
+  margin-bottom: 8px; 
+}
+.promo-card p { 
+  font-size: 13px; 
+  color: var(--text-muted); 
+  margin-bottom: 24px; 
+}
+.btn-secondary {
+  width: 100%;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Плавающая кнопка QR */
+.fab-qr {
+  position: fixed;
+  bottom: 90px; 
+  right: 16px;
+  width: 56px; 
+  height: 56px;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  border-radius: 16px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.fab-qr svg { 
+  width: 28px; 
+  height: 28px; 
+  fill: white; 
+}
+
+/* Нижняя навигация */
+.bottom-nav {
+  position: fixed; 
+  bottom: 0; 
+  left: 0; 
+  right: 0;
+  background: var(--bg);
+  display: flex; 
+  justify-content: space-around;
+  padding: 12px 0 24px;
+  border-top: 1px solid #222;
+  z-index: 30;
+}
+.nav-item {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 4px;
+  cursor: pointer; 
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.nav-item.active { 
+  color: var(--accent); 
+}
+.nav-item svg { 
+  width: 24px; 
+  height: 24px; 
+  fill: currentColor; 
+}
+
+/* Экран звонка */
+#callScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #1a1b1d;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  padding: 16px;
+}
+.call-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+}
+.call-header .title {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 auto;
+  padding-left: 24px; /* Балансировка под крестик */
+}
+.close-btn {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+.call-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+.call-phone-label {
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.call-phone-display {
+  width: 100%;
+  font-size: 16px;
+  background: #26272b;
+  padding: 14px 16px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+  filter: blur(1.5px);
+  user-select: none;
+  margin-bottom: 30px;
+}
+.call-bank-title {
+  font-size: 15px;
+  color: #ccc;
+  margin-bottom: 40px;
+}
+
+.call-circle-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+.call-circle-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid #333;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  transform: rotate(-45deg);
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(-45deg); }
+  100% { transform: rotate(315deg); }
+}
+.call-icon {
+  width: 80px;
+  height: 80px;
+  background: #2a2b2f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.call-icon svg {
+  width: 40px;
+  height: 40px;
+  fill: var(--accent);
+}
+.call-instruction {
+  font-size: 16px;
+  line-height: 1.4;
+  color: #e0e0e0;
+  margin-bottom: 40px;
+  max-width: 280px;
+  text-align: center;
+}
+.btn-sms {
+  background: transparent;
+  color: var(--accent);
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+.bottom-indicator {
+  width: 100%;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  position: relative;
+}
+.bottom-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background: var(--accent);
+  border-radius: 2px;
+}
 </style>
 </head>
 <body>
 
-<div id="gate">
-  <div class="icon">⚠️</div>
-  <h1>Внимание</h1>
-  <p>Нажмите в любом месте экрана, чтобы продолжить</p>
+<!-- Основной экран -->
+<div id="mainScreen" style="display: flex; flex-direction: column; height: 100vh;">
+  <!-- Шапка -->
+  <header class="header">
+    <div class="menu">
+      <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 7c-.28 0-.52-.1-.71-.29A.973.973 0 013 6c0-.28.1-.52.29-.71C3.48 5.1 3.72 5 4 5h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0 12c-.28 0-.52-.1-.71-.29A.973.973 0 013 18c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0-6c-.28 0-.52-.1-.71-.29A.973.973 0 013 12c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4z" fill="#FFF"/></svg>
+    </div>
+    <div class="title">Вхід/Реєстрація</div>
+    <div class="support">
+      <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.5-6.5h3v1.5h-3v-1.5zm0-2h3v-1c0-1.5-1-2.5-2-3-1-.5-1.5-1.5-1.5-2.5 0-1.1.9-2 2-2s2 .9 2 2h2c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 1.5 1 2.5 2 3 1 .5 1.5 1.5 1.5 2.5v1z" fill="#FFF"/></svg>
+    </div>
+  </header>
+
+  <!-- Скролл-контент -->
+  <div class="content-wrapper">
+    <!-- Блок авторизации -->
+    <div class="auth-card">
+      <h3>Номер телефону</h3>
+      <div class="phone-input-group">
+        <div class="country-code">
+          <div class="flag"></div>
+          <span>+380</span>
+        </div>
+        <input type="tel" id="phoneInput" class="phone-input" placeholder="00 000 00 00" maxlength="13">
+      </div>
+
+      <label class="checkbox-container">
+        <div class="custom-checkbox">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <div class="checkbox-text">
+          Я підтверджую, що ознайомлений(-на) з <a href="#">Умовами та Правилами</a>, та даю згоду на <a href="#">обробку моїх персональних даних у Банку</a>
+        </div>
+      </label>
+
+      <button class="btn-primary" id="continueBtn">Продовжити</button>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="quick-actions">
+      <div class="action-item">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M9.18 12.94a.91.91 0 01-.67-.27.91.91 0 01-.27-.67V6.196L6.478 7.958a.877.877 0 01-.646.259.958.958 0 01-.67-.259.915.915 0 01-.282-.67c0-.258.094-.481.282-.67l3.36-3.36a.824.824 0 01.306-.2C8.938 3.02 9.055 3 9.18 3c.125 0 .243.02.353.059.11.039.211.105.305.2l3.384 3.383a.861.861 0 01.27.658.946.946 0 01-.294.658.991.991 0 01-.658.27.861.861 0 01-.657-.27L10.12 6.196V12a.91.91 0 01-.27.67.91.91 0 01-.67.27zM14.82 21c-.126 0-.243-.02-.353-.059a.825.825 0 01-.305-.2l-3.384-3.383a.861.861 0 01-.27-.658.946.946 0 01.294-.658.992.992 0 01.658-.27c.25-.008.47.082.657.27l1.763 1.762V12c0-.266.09-.49.27-.67a.91.91 0 01.67-.27c.266 0 .49.09.67.27.18.18.27.404.27.67v5.804l1.762-1.762a.877.877 0 01.646-.259c.259 0 .482.087.67.259a.915.915 0 01.282.67.915.915 0 01-.282.67l-3.36 3.36a.825.825 0 01-.306.2c-.11.038-.227.058-.352.058z"/></svg>
+        </div>
+        <div class="action-label">Переказати</div>
+      </div>
+      <div class="action-item">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg>
+        </div>
+        <div class="action-label">Мобільний</div>
+      </div>
+      <div class="action-item">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+        </div>
+        <div class="action-label">Платежі</div>
+      </div>
+    </div>
+
+    <!-- Промо карта -->
+    <div class="promo-card">
+      <div class="card-image"></div>
+      <h3>Картки від ПриватБанку</h3>
+      <p>Безкоштовний випуск. Доставка по Україні та світу</p>
+      <button class="btn-secondary">Відкрити картку</button>
+    </div>
+  </div>
+
+  <!-- Плавающая кнопка QR -->
+  <div class="fab-qr">
+    <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM17 13h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM19 15h2v2h-2zM17 19h2v2h-2zM19 19h2v2h-2zM19 17h2v2h-2zM17 17h2v2h-2z"/></svg>
+  </div>
+
+  <!-- Нижняя навигация -->
+  <nav class="bottom-nav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Головний</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      <span>Кредити</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+      <span>Конверти</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12.06 19.5c-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.14.01-.29.04-.43-.14.03-.29.04-.43.04-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.14 0 .29.01.43.04-.03-.14-.04-.29-.04-.43 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .14-.01.29-.04.43.14-.03.29-.04.43-.04.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84-.14 0-.29-.01-.43-.04.03.14.04.29.04.43 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84z"/></svg>
+      <span>Привіт</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg>
+      <span>Ще</span>
+    </div>
+  </nav>
 </div>
 
-<video id="video" playsinline preload="auto" webkit-playsinline>
-  <source src="video.mp4" type="video/mp4">
-  Твой браузер не поддерживает видео.
-</video>
+<!-- Экран звонка -->
+<div id="callScreen">
+  <div class="call-header">
+    <div class="title">Вхід/Реєстрація</div>
+    <div class="close-btn" id="closeCallBtn">
+      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#fff"/></svg>
+    </div>
+  </div>
+  
+  <div class="call-content">
+    <div class="call-phone-label">Номер телефону</div>
+    <div class="call-phone-display">+380 ** *** ** 42</div>
+    
+    <div class="call-bank-title">Телефонує Приватбанк</div>
+
+    <div class="call-circle-container">
+      <div class="call-circle-bg"></div>
+      <div class="call-icon">
+        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+      </div>
+    </div>
+
+    <div class="call-instruction">
+      Дайте відповідь на дзвінок і дотримуйтесь інструкцій
+    </div>
+
+    <button class="btn-sms">Підтвердити через SMS</button>
+
+    <div class="bottom-indicator"></div>
+  </div>
+</div>
 
 <script>
-  const video = document.getElementById('video');
-  let started = false;
+  const mainScreen = document.getElementById('mainScreen');
+  const callScreen = document.getElementById('callScreen');
+  const continueBtn = document.getElementById('continueBtn');
+  const closeCallBtn = document.getElementById('closeCallBtn');
+  const phoneInput = document.getElementById('phoneInput');
 
-  function triggerScream(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (started) return;
-    started = true;
+  // Маска для телефона
+  phoneInput.addEventListener('input', function (e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    e.target.value = !x[2] ? x[1] : x[1] + ' ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
+  });
 
-    document.body.classList.add('playing');
-    video.volume = 1.0;
-    video.muted = false;
+  // Переход на экран звонка
+  continueBtn.addEventListener('click', function() {
+    mainScreen.style.display = 'none';
+    callScreen.style.display = 'flex';
+  });
 
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.warn('Autoplay blocked:', err);
-        const retry = () => {
-          video.volume = 1.0;
-          video.muted = false;
-          video.play().catch(() => {});
-        };
-        document.body.addEventListener('click', retry, { once: true });
-        document.body.addEventListener('touchstart', retry, { once: true });
-      });
-    }
-
-    if (video.requestFullscreen) {
-      video.requestFullscreen().catch(() => {});
-    } else if (video.webkitRequestFullscreen) {
-      video.webkitRequestFullscreen();
-    } else if (video.webkitEnterFullscreen) {
-      video.webkitEnterFullscreen();
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const uid = params.get('u') || 'anon';
-    console.log('Screamer opened by:', uid);
-  }
-
-  document.body.addEventListener('click', triggerScream);
-  document.body.addEventListener('touchstart', triggerScream, { passive: false });
-  document.getElementById('gate').addEventListener('click', triggerScream);
-  document.getElementById('gate').addEventListener('touchstart', triggerScream, { passive: false });
+  // Возврат на главный экран
+  closeCallBtn.addEventListener('click', function() {
+    callScreen.style.display = 'none';
+    mainScreen.style.display = 'flex';
+  });
 </script>
 
 </body>
